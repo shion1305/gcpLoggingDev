@@ -9,6 +9,7 @@ import (
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	"google.golang.org/genproto/googleapis/api/monitoredres"
+	ltype "google.golang.org/genproto/googleapis/logging/type"
 	"os"
 )
 
@@ -47,14 +48,15 @@ func (l Logger) createLogEntry() {
 		Entries: []*logPb.LogEntry{
 			{
 				LogName: "projects/" + os.Getenv("GCP_PROJECT_ID") + "/logs/" + os.Getenv("GCP_LOG_NAME"),
-				Labels: map[string]string{
-					"LEVEL": "Warning",
+				Resource: &monitoredres.MonitoredResource{
+					Type: "global",
 				},
 				Payload: &logPb.LogEntry_TextPayload{
 					TextPayload: "This is a test log entry2 with WARNING level",
 				},
-				Resource: &monitoredres.MonitoredResource{
-					Type: "global",
+				Severity: ltype.LogSeverity_INFO,
+				Labels: map[string]string{
+					"LEVEL": "Warning",
 				},
 			},
 		},
@@ -70,7 +72,7 @@ func (l Logger) createLogEntry() {
 func (l Logger) queryLogEntryWithLogging() {
 	ctx := context.Background()
 	iter := l.client.ListLogEntries(ctx, &logPb.ListLogEntriesRequest{
-		Filter:   "textPayload:entry2",
+		Filter:   "timestamp>=\"2023-06-08T09:00:00Z\"",
 		PageSize: 30,
 		ResourceNames: []string{
 			"projects/" + os.Getenv("GCP_PROJECT_ID"),
