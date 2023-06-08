@@ -10,6 +10,7 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/genproto/googleapis/api/monitoredres"
 	ltype "google.golang.org/genproto/googleapis/logging/type"
+	"google.golang.org/protobuf/types/known/structpb"
 	"os"
 )
 
@@ -44,6 +45,12 @@ func NewLogger() Logger {
 
 func (l Logger) createLogEntry() {
 	// create log entry
+	payload, err := structpb.NewStruct(map[string]interface{}{
+		"message": "test",
+	})
+	if err != nil {
+		panic(err)
+	}
 	logEntry := logPb.WriteLogEntriesRequest{
 		Entries: []*logPb.LogEntry{
 			{
@@ -51,8 +58,8 @@ func (l Logger) createLogEntry() {
 				Resource: &monitoredres.MonitoredResource{
 					Type: "global",
 				},
-				Payload: &logPb.LogEntry_TextPayload{
-					TextPayload: "This is a test log entry2 with WARNING level",
+				Payload: &logPb.LogEntry_JsonPayload{
+					JsonPayload: payload,
 				},
 				Severity: ltype.LogSeverity_INFO,
 				Labels: map[string]string{
@@ -72,7 +79,7 @@ func (l Logger) createLogEntry() {
 func (l Logger) queryLogEntryWithLogging() {
 	ctx := context.Background()
 	iter := l.client.ListLogEntries(ctx, &logPb.ListLogEntriesRequest{
-		Filter:   "timestamp>=\"2023-06-08T09:00:00Z\"",
+		Filter:   "timestamp>=\"2023-06-08T00:00:00Z\" AND jsonPayload.message=\"test\"",
 		PageSize: 30,
 		ResourceNames: []string{
 			"projects/" + os.Getenv("GCP_PROJECT_ID"),
